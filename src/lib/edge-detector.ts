@@ -19,11 +19,21 @@ export interface MarketAnalysis {
 export function analyzeMarkets(markets: PolymarketMarket[], cryptoContext: CryptoPriceContext | null): MarketAnalysis[] {
   return markets.map(market => {
     // Extract YES/NO prices (Implied Probabilities)
-    const yesToken = market.tokens?.find(t => t.outcome === 'Yes');
-    const noToken = market.tokens?.find(t => t.outcome === 'No');
-    
-    const probYes = yesToken?.price || 0.5;
-    const probNo = noToken?.price || 0.5;
+    let probYes = 0.5;
+    let probNo = 0.5;
+
+    if (market.tokens && market.tokens.length >= 2) {
+      const yesToken = market.tokens.find(t => t.outcome === 'Yes');
+      const noToken = market.tokens.find(t => t.outcome === 'No');
+      probYes = yesToken?.price || 0.5;
+      probNo = noToken?.price || 0.5;
+    } else if (market.outcomes && market.outcomePrices) {
+      const yesIdx = market.outcomes.indexOf('Yes');
+      const noIdx = market.outcomes.indexOf('No');
+      
+      if (yesIdx !== -1) probYes = parseFloat(market.outcomePrices[yesIdx]) || 0.5;
+      if (noIdx !== -1) probNo = parseFloat(market.outcomePrices[noIdx]) || 0.5;
+    }
     
     // Spread calculation
     const spread = Math.abs((probYes + probNo) - 1.0) * 100;

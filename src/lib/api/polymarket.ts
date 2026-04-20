@@ -7,7 +7,9 @@ export interface PolymarketMarket {
   volume: string;
   active: boolean;
   closed: boolean;
-  tokens: Array<{ token_id: string; price: number; outcome: string }>;
+  tokens?: Array<{ token_id: string; price: number; outcome: string }>;
+  outcomes?: string[];
+  outcomePrices?: string[];
   tags: string[];
 }
 
@@ -29,8 +31,17 @@ export async function fetchTopMarkets(): Promise<PolymarketMarket[]> {
     // The API might return an array or an object with a data property. Adjusting for common Gamma API structure.
     const markets = Array.isArray(data) ? data : data.data || [];
     
-    // Filter out markets that don't have standard YES/NO tokens for simplicity
-    return markets.filter((m: PolymarketMarket) => m.tokens && m.tokens.length >= 2);
+    // Filter out markets that don't have standard YES/NO tokens or outcomes for simplicity
+    const validMarkets = markets.filter((m: PolymarketMarket) => 
+      (m.tokens && m.tokens.length >= 2) || 
+      (m.outcomes && m.outcomes.length >= 2 && m.outcomePrices)
+    );
+    
+    if (validMarkets.length === 0) {
+      throw new Error("API returned markets, but none had valid YES/NO probability structures.");
+    }
+    
+    return validMarkets;
   } catch (error) {
     console.error('Error fetching Polymarket data, using fallback data:', error);
     // Fallback realistic data in case the user's environment blocks external API calls (e.g. SSL packet length error)
