@@ -1,4 +1,5 @@
 import { CryptoPriceContext } from './api/coingecko';
+import { PolymarketMarket } from './api/polymarket';
 
 export type Recommendation = 'Strong Edge YES' | 'Moderate Edge YES' | 'Avoid' | 'Moderate Edge NO' | 'Strong Edge NO';
 
@@ -15,11 +16,11 @@ export interface MarketAnalysis {
   category: string;
 }
 
-export function analyzeMarkets(markets: any[], cryptoContext: CryptoPriceContext | null): MarketAnalysis[] {
+export function analyzeMarkets(markets: PolymarketMarket[], cryptoContext: CryptoPriceContext | null): MarketAnalysis[] {
   return markets.map(market => {
     // Extract YES/NO prices (Implied Probabilities)
-    const yesToken = market.tokens?.find((t: any) => t.outcome === 'Yes');
-    const noToken = market.tokens?.find((t: any) => t.outcome === 'No');
+    const yesToken = market.tokens?.find(t => t.outcome === 'Yes');
+    const noToken = market.tokens?.find(t => t.outcome === 'No');
     
     const probYes = yesToken?.price || 0.5;
     const probNo = noToken?.price || 0.5;
@@ -59,7 +60,7 @@ export function analyzeMarkets(markets: any[], cryptoContext: CryptoPriceContext
     edgeScore = Math.max(-100, Math.min(100, edgeScore));
     
     let recommendation: Recommendation = 'Avoid';
-    let confidence = Math.abs(edgeScore);
+    const confidence = Math.abs(edgeScore);
     
     if (edgeScore > 30) recommendation = 'Strong Edge YES';
     else if (edgeScore > 10) recommendation = 'Moderate Edge YES';

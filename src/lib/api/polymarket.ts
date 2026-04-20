@@ -30,7 +30,7 @@ export async function fetchTopMarkets(): Promise<PolymarketMarket[]> {
     const markets = Array.isArray(data) ? data : data.data || [];
     
     // Filter out markets that don't have standard YES/NO tokens for simplicity
-    return markets.filter((m: any) => m.tokens && m.tokens.length >= 2);
+    return markets.filter((m: PolymarketMarket) => m.tokens && m.tokens.length >= 2);
   } catch (error) {
     console.error('Error fetching Polymarket data, using fallback data:', error);
     // Fallback realistic data in case the user's environment blocks external API calls (e.g. SSL packet length error)
