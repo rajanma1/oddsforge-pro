@@ -189,13 +189,6 @@ export default function DashboardClient({ initialMarkets }: DashboardProps) {
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-300 h-8 px-3 bg-blue-600 hover:bg-blue-700 text-white"
-                      onClick={(e) => {
-                        // For demonstration purposes, if the link is a generic mock link, prevent default and alert
-                        if (market.tradeUrl.includes('m-') || market.tradeUrl.includes('cond-')) {
-                          e.preventDefault();
-                          alert('This is a mock market (API fetch failed). In production, this links directly to the Polymarket trading page for ' + market.title);
-                        }
-                      }}
                     >
                       Trade <ExternalLink className="w-3 h-3 ml-1" />
                     </a>

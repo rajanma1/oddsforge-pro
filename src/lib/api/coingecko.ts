@@ -18,11 +18,8 @@ export async function fetchCryptoContext(): Promise<CryptoPriceContext | null> {
 
     return await res.json();
   } catch (error) {
-    console.error('Error fetching CoinGecko data, using fallback data:', error);
-    // Fallback data in case the user's environment blocks external API calls (e.g. SSL packet length error)
-    return {
-      bitcoin: { usd: 64230.50, usd_24h_change: 2.5 },
-      ethereum: { usd: 3450.20, usd_24h_change: -1.2 }
-    };
+    console.error('Error fetching CoinGecko data:', error);
+    // Remove fallback to ensure only real data is shown
+    return null;
   }
 }
