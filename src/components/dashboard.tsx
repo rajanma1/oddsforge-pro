@@ -47,7 +47,7 @@ export default function DashboardClient({ initialMarkets }: DashboardProps) {
 
   const chartData = displayedMarkets.slice(0, 10).map(m => ({
     name: m.title.substring(0, 20) + "...",
-    edge: m.edgeScore,
+    ev: m.expectedValue,
     probYes: m.impliedProbYes * 100,
   }));
 
@@ -60,20 +60,20 @@ export default function DashboardClient({ initialMarkets }: DashboardProps) {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <TrendingUp className="w-5 h-5 text-emerald-400" />
-              <span>Top Edges Overview</span>
+              <span>Top Expected Value (EV %)</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <XAxis dataKey="name" stroke="#52525b" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#52525b" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#52525b" fontSize={12} tickLine={false} axisLine={false} unit="%" />
                 <Tooltip 
                   cursor={{ fill: '#27272a' }}
                   contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#f8fafc' }} 
                 />
                 <ReferenceLine y={0} stroke="#52525b" />
-                <Bar dataKey="edge" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="ev" fill="#10b981" radius={[4, 4, 0, 0]} name="Expected Value %" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -83,23 +83,27 @@ export default function DashboardClient({ initialMarkets }: DashboardProps) {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <ShieldCheck className="w-5 h-5 text-blue-400" />
-              <span>Intelligence Summary</span>
+              <span>Alpha Summary</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="bg-zinc-900 p-4 rounded-lg border border-zinc-800">
-              <div className="text-sm text-zinc-400 mb-1">Total Markets Analyzed</div>
-              <div className="text-2xl font-bold">{initialMarkets.length}</div>
-            </div>
-            <div className="bg-emerald-900/20 p-4 rounded-lg border border-emerald-900/50">
-              <div className="text-sm text-emerald-400/80 mb-1">Strong Edges Found</div>
+              <div className="text-sm text-zinc-400 mb-1">Max EV Found</div>
               <div className="text-2xl font-bold text-emerald-400">
-                {initialMarkets.filter(m => m.recommendation.includes('Strong')).length}
+                {Math.max(...initialMarkets.map(m => m.expectedValue), 0)}%
+              </div>
+            </div>
+            <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-900/50">
+              <div className="text-sm text-blue-400/80 mb-1">Avg Mispricing</div>
+              <div className="text-2xl font-bold text-blue-400">
+                {(initialMarkets.reduce((acc, m) => acc + Math.abs(m.mispricing), 0) / (initialMarkets.length || 1)).toFixed(1)}%
               </div>
             </div>
             <div className="bg-amber-900/20 p-4 rounded-lg border border-amber-900/50">
-              <div className="text-sm text-amber-400/80 mb-1">Markets on Watchlist</div>
-              <div className="text-2xl font-bold text-amber-400">{watchlist.length}</div>
+              <div className="text-sm text-amber-400/80 mb-1">Watchlist Alpha</div>
+              <div className="text-2xl font-bold text-amber-400">
+                {initialMarkets.filter(m => watchlist.includes(m.id)).length} Signals
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -111,7 +115,7 @@ export default function DashboardClient({ initialMarkets }: DashboardProps) {
             variant={activeTab === "all" ? "secondary" : "ghost"} 
             onClick={() => setActiveTab("all")}
           >
-            All Markets
+            All Opportunities
           </Button>
           <Button 
             variant={activeTab === "watchlist" ? "secondary" : "ghost"} 
@@ -127,18 +131,19 @@ export default function DashboardClient({ initialMarkets }: DashboardProps) {
           <TableHeader>
             <TableRow>
               <TableHead className="w-12"></TableHead>
-              <TableHead>Market</TableHead>
-              <TableHead className="w-24 text-right">YES</TableHead>
-              <TableHead className="w-24 text-right">NO</TableHead>
-              <TableHead className="w-32 text-center">Edge Score</TableHead>
-              <TableHead className="w-40">Recommendation</TableHead>
-              <TableHead className="w-24 text-right">Action</TableHead>
+              <TableHead>Market & Alpha Signal</TableHead>
+              <TableHead className="w-24 text-right">Implied</TableHead>
+              <TableHead className="w-24 text-right">Fair</TableHead>
+              <TableHead className="w-24 text-center text-emerald-400">EV %</TableHead>
+              <TableHead className="w-24 text-center text-blue-400">Kelly %</TableHead>
+              <TableHead className="w-40">Signal</TableHead>
+              <TableHead className="w-24 text-right">Trade</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {displayedMarkets.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center text-zinc-500">
+                <TableCell colSpan={8} className="h-32 text-center text-zinc-500">
                   {activeTab === "watchlist" ? "Your watchlist is empty." : "No markets found."}
                 </TableCell>
               </TableRow>
@@ -159,21 +164,18 @@ export default function DashboardClient({ initialMarkets }: DashboardProps) {
                     </div>
                     <div className="flex items-center mt-1 space-x-2">
                       <Badge variant="outline" className="text-[10px] py-0">{market.category}</Badge>
-                      <span className="text-xs text-zinc-500">Spread: {market.spread.toFixed(1)}%</span>
+                      <span className={`text-xs ${market.mispricing > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {market.mispricing > 0 ? '+' : ''}{market.mispricing}% Mispriced
+                      </span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right font-mono">{(market.impliedProbYes * 100).toFixed(1)}%</TableCell>
-                  <TableCell className="text-right font-mono text-zinc-400">{(market.impliedProbNo * 100).toFixed(1)}%</TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-center">
-                      <div className="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden flex">
-                        {/* A very simple visual bar for edge */}
-                        <div 
-                          className={`h-2.5 rounded-full ${market.edgeScore > 0 ? 'bg-emerald-500 ml-auto' : 'bg-red-500 mr-auto'}`} 
-                          style={{ width: `${Math.abs(market.edgeScore)}%` }}
-                        ></div>
-                      </div>
-                    </div>
+                  <TableCell className="text-right font-mono text-zinc-400">{(market.impliedProbYes * 100).toFixed(0)}%</TableCell>
+                  <TableCell className="text-right font-mono text-zinc-100 font-bold">{(market.trueProbYes * 100).toFixed(0)}%</TableCell>
+                  <TableCell className="text-center font-mono text-emerald-400 font-bold">
+                    {market.expectedValue > 0 ? '+' : ''}{market.expectedValue}%
+                  </TableCell>
+                  <TableCell className="text-center font-mono text-blue-400">
+                    {market.kellySize}%
                   </TableCell>
                   <TableCell>
                     <Badge variant={

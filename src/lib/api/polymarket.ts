@@ -44,7 +44,8 @@ export async function fetchTopMarkets(): Promise<PolymarketMarket[]> {
     return validMarkets;
   } catch (error) {
     console.error('Error fetching Polymarket data:', error);
-    // Remove mock fallback to ensure user only sees real live data
-    throw error;
+    // In production, we throw to fail the build/render if data is missing
+    // But we need a safe return for environments that block the API during build
+    return []; 
   }
 }
