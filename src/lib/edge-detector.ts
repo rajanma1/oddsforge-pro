@@ -86,7 +86,7 @@ export function analyzeMarkets(markets: PolymarketMarket[], cryptoContext: Crypt
       spread: Math.round(spread * 100) / 100,
       recommendation,
       confidence: Math.round(confidence),
-      tradeUrl: `https://polymarket.com/event/${market.slug}`,
+      tradeUrl: `https://polymarket.com/market/${market.slug}`,
       category
     };
   }).sort((a, b) => Math.abs(b.edgeScore) - Math.abs(a.edgeScore)); // Sort by biggest edge
